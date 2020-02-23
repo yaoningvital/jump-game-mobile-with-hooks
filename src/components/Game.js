@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import Board from './Board'
 import SelectType from './SelectType'
 import { circlesDefault } from '../utils'
+import _ from 'lodash'
 
 
 function Game (props) {
@@ -12,8 +13,15 @@ function Game (props) {
   // 记录下棋过程中的circles，只有在点击“确定”之后，这个数组中的最后一条circles记录才会push到history中
   let [cashCirclesArr, setCashCirclesArr] = useState([circlesDefault])
   
-  let [showSelectTypeModal, setShowSelectTypeModal] = useState(false) // 显示选择类型弹层
-  let [playerNum, setPlayerNum] = useState(0) // 玩家数量
+  // 显示选择类型弹层
+  let [showSelectTypeModal, setShowSelectTypeModal] = useState(false)
+  
+  // 玩家数量
+  let [playerNum, setPlayerNum] = useState(0)
+  
+  // 已选择的棋子颜色
+  let [selectedChessColors, setSelectedChessColors] = useState([])
+  
   
   let [history, setHistory] = useState([{
     circles: circlesDefault, // 棋子布局
@@ -21,10 +29,39 @@ function Game (props) {
     ranking: [], // 已经完成游戏的颜色
   }])
   
-  // 处理选择游戏类型(选择玩家数量)
-  function handleSelectType (playerNum) {
-    setShowSelectTypeModal(false) // 隐藏弹层
+  // 处理选择玩家数量
+  function handleSelectPlayerNum (playerNum) {
     setPlayerNum(playerNum) // 更新玩家数量
+    
+    // 如果玩家数量 < 已选颜色数量，则截取 已选颜色
+    let newSelectedChessColors = _.cloneDeep(selectedChessColors)
+    if (playerNum < newSelectedChessColors.length) {
+      newSelectedChessColors = newSelectedChessColors.slice(0, playerNum)
+    }
+    setSelectedChessColors(newSelectedChessColors)
+  }
+  
+  // 点击了一个颜色
+  function handleSelectChessColor (clickColor) {
+    let newSelectedChessColors = _.cloneDeep(selectedChessColors)
+    
+    // 如果这个颜色在 已选颜色数组中，将它从已选颜色数组中删除
+    if (newSelectedChessColors.includes(clickColor)) {
+      let clickColorIndex = newSelectedChessColors.indexOf(clickColor)
+      newSelectedChessColors.splice(clickColorIndex, 1)
+    }
+    // 这个颜色 不在 已选颜色数组中，将它加进去
+    else {
+      newSelectedChessColors.push(clickColor)
+    }
+    
+    setSelectedChessColors(newSelectedChessColors)
+  }
+  
+  
+  // 点击 选择类型 的 确定 按钮
+  function handleConfirmSelectType () {
+    setShowSelectTypeModal(false)
   }
   
   return (
@@ -45,7 +82,11 @@ function Game (props) {
       {/*  选择类型弹层*/}
       <SelectType
         showSelectTypeModal={showSelectTypeModal}
-        handleSelectType={handleSelectType}
+        handleSelectPlayerNum={handleSelectPlayerNum}
+        playerNum={playerNum}
+        selectedChessColors={selectedChessColors}
+        handleSelectChessColor={handleSelectChessColor}
+        handleConfirmSelectType={handleConfirmSelectType}
       />
     </div>
   )

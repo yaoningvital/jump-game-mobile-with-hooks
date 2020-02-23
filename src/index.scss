@@ -64,6 +64,11 @@ body {
 
       .am-modal-body {
         .modal-content {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: center;
+
           .title {
             display: flex;
             flex-direction: row;
@@ -82,23 +87,98 @@ body {
             }
           }
 
-          .btns {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-
-            button {
-              width: 100%;
-              border-style: none;
-              font-size: 28px;
+          .player-num {
+            h4 {
               font-family: 'FGG';
-              padding: 10px 0;
-              outline: none;
-              margin: 10px 0;
-              display: block;
-              border-radius: 10px;
+              margin: 10px;
+              font-size: 16px;
             }
+
+            .btns {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              align-items: center;
+
+              button {
+                width: 40%;
+                border-style: none;
+                font-size: 24px;
+                font-family: 'FGG';
+                padding: 6px 0;
+                outline: none;
+                margin: 5px 10px;
+                display: block;
+                border-radius: 8px;
+              }
+            }
+          }
+
+          .chess-color {
+            h4 {
+              font-family: 'FGG';
+              margin: 10px;
+              font-size: 16px;
+            }
+
+            .colors {
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              justify-content: space-between;
+              align-items: center;
+
+              .item {
+                position: relative;
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: center;
+                margin: 5px 10px;
+
+                button {
+                  width: 40px;
+                  height: 40px;
+                  border-style: none;
+                  outline: none;
+                  display: block;
+                  border-radius: 20px;
+                  touch-action: none;
+                }
+
+                img {
+                  position: absolute;
+                  width: 18px;
+                  height: 18px;
+                  display: block;
+                  bottom: 0;
+                  right: 0;
+                }
+
+                .black-mask {
+                  position: absolute;
+                  width: 40px;
+                  height: 40px;
+                  border-radius: 20px;
+                  background-color: rgba(0, 0, 0, 0.5);
+                  touch-action: none;
+                }
+              }
+
+            }
+          }
+
+          .confirm {
+            display: block;
+            width: 100%;
+            font-size: 25px;
+            font-family: 'FGG';
+            padding: 8px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-style: none;
+            touch-action: none;
           }
         }
       }

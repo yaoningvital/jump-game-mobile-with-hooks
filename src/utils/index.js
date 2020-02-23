@@ -1,4 +1,17 @@
 export const GREY = '#ddd'
+export const RED = '#ee1d24'
+export const ORANGE = '#f7941d'
+export const YELLOW = '#fff100'
+export const GREEN = '#00a650'
+export const CYAN = '#16bcb4'
+export const LIGHTBLUE = '#00aeef'
+export const BLUE = '#0072bc'
+export const DARKBLUE = '#2f3192'
+export const PERPLE = '#652c91'
+export const ROSERED = '#ed008c'
+export const PINK = '#f49bc1'
+export const BLACK = '#111'
+
 
 export const circlesDefault = [ // 默认全部为灰色
   [ // 一行
