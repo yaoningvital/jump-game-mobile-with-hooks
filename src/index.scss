@@ -1,0 +1,107 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  background-image: url("./assets/images/bg_1.jpg");
+  background-size: cover;
+}
+
+@font-face {
+  font-family: 'FGG';
+  src: url("./assets/fonts/FGG.ttf");
+}
+
+.game {
+  position: relative;
+  padding-top: 80px;
+
+  .select-type-btn {
+    position: absolute;
+    top: 30px;
+    left: 15px;
+    padding: 4px 6px;
+    outline: none;
+    border-style: none;
+    font-family: 'FGG';
+    font-size: 16px;
+    border-radius: 10px;
+  }
+
+  .board {
+    margin: auto;
+    background: url("./assets/images/board-bg3.jpg");
+    background-size: cover;
+    box-shadow: 0 0 10px #bbb;
+
+    .board-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: center;
+
+      button {
+        border-style: none;
+        outline: none;
+        margin: 0;
+      }
+    }
+
+  }
+}
+
+.am-modal-mask {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.am-modal-wrap {
+  .am-modal.am-modal-transparent {
+    .am-modal-content {
+      background-color: transparent;
+
+      .am-modal-body {
+        .modal-content {
+          .title {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+
+            img {
+              display: block;
+              width: 50px;
+              height: 50px;
+            }
+
+            span {
+              font-size: 24px;
+              font-family: 'FGG';
+            }
+          }
+
+          .btns {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            button {
+              width: 100%;
+              border-style: none;
+              font-size: 28px;
+              font-family: 'FGG';
+              padding: 10px 0;
+              outline: none;
+              margin: 10px 0;
+              display: block;
+              border-radius: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
