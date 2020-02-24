@@ -170,3 +170,57 @@ export const circlesDefault = [ // 默认全部为灰色
     {x: 16, y: -4, z: 12, color: GREY, rowIndex: 16, columnIndex: 0},
   ]
 ]
+
+// 设置 南边10子
+export function setSouthTenColor (circles, color) {
+  for (let i = circles.length - 4; i < circles.length; i++) {
+    for (let j = 0; j < circles[i].length; j++) {
+      circles[i][j].color = color
+    }
+  }
+}
+
+// 设置 北边10子
+export function setNorthTenColor (circles, color) {
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < circles[i].length; j++) {
+      circles[i][j].color = color
+    }
+  }
+}
+
+// 设置 西北边10子
+export function setWestNorthTenColor (circles, color) {
+  for (let i = 4; i < 8; i++) {
+    for (let j = 0; j < 8 - i; j++) {
+      circles[i][j].color = color
+    }
+  }
+}
+
+// 设置 东北边10子
+export function setEastNorthTenColor (circles, color) {
+  for (let i = 4; i < 8; i++) {
+    for (let j = 9; j < 17 - i; j++) {
+      circles[i][j].color = color
+    }
+  }
+}
+
+// 设置 西南边10子
+export function setWestSouthTenColor (circles, color) {
+  for (let i = 9; i < 13; i++) {
+    for (let j = 0; j < i - 8; j++) {
+      circles[i][j].color = color
+    }
+  }
+}
+
+// 设置 东南边10子
+export function setEastSouthTenColor (circles, color) {
+  for (let i = 9; i < 13; i++) {
+    for (let j = 9; j < i + 1; j++) {
+      circles[i][j].color = color
+    }
+  }
+}

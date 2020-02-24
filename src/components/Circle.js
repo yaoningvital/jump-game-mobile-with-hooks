@@ -9,7 +9,7 @@ function Circle (props) {
   let boxShadow = circleData.color === '#ddd' ?
     '1px 1px 1px #888888 inset' : '1px 1px 1px rgba(0,0,0,0.2)'
   
-  
+  let backgroundImage = `radial-gradient(at 80px 80px, rgba(0,0,0,0), ${circleData.color})`
   
   return (
     <button
@@ -19,6 +19,7 @@ function Circle (props) {
         borderRadius: buttonWidth / 2 + 'px',
         margin: buttonMargin,
         boxShadow: boxShadow,
+        backgroundImage:backgroundImage,
       }}
     />
   )
