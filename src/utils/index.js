@@ -1,3 +1,5 @@
+import _ from "lodash";
+
 export const GREY = '#ddd'
 export const RED = '#ee1d24'
 export const ORANGE = '#f7941d'
@@ -371,7 +373,7 @@ export function findMoveToCells (currentCashCircles, selectedCircle) {
  * @param selectedCircle ： 当前选中的棋子（当前正在下的棋子，即当前正在走这一大步的棋子）
  * @return : 如果是移过来的，返回移过来的位置点对象，如果不是移过来的，返回 false
  */
-export function isMoveHere (currentCashCirclesArr, selectedCircle) {
+export function getIsMoveHere (currentCashCirclesArr, selectedCircle) {
   let isMoveHere = false // 当前棋子是否是 移过来 的，默认不是移过来的（是跳过来的）
   let preStepCircles = currentCashCirclesArr[currentCashCirclesArr.length - 2] // 上一步的棋子布局
   let currentStepCircles = currentCashCirclesArr[currentCashCirclesArr.length - 1] // 当前的棋子布局
@@ -405,4 +407,407 @@ export function isMoveHere (currentCashCirclesArr, selectedCircle) {
   }
   
   return isMoveHere
+}
+
+/**
+ * 函数的作用是：将 circles 中 oneCircle 这个位置变为 oneColor 这个颜色
+ * @param circles : 要改变的布局
+ * @param oneCircle : 要改变颜色的棋子位置
+ * @param oneColor : 要改变为的颜色
+ */
+export function setOneCircleToOneColor (circles, oneCircle, oneColor) {
+  let actionComplete = false // 动作是否已完成
+  for (let i = 0; i < circles.length; i++) {
+    for (let j = 0; j < circles[i].length; j++) {
+      if (
+        circles[i][j].x === oneCircle.x &&
+        circles[i][j].y === oneCircle.y
+      ) {
+        circles[i][j].color = oneColor
+        actionComplete = true
+        break
+      }
+    }
+    if (actionComplete) {
+      break
+    }
+  }
+}
+
+/**
+ * 判断两次棋子布局是否完全一样，完全一样返回 true
+ * @param circlesOne : 一个棋子布局
+ * @param circlesTwo : 另一个棋子布局
+ */
+export function isBoardLayoutTheSame (circlesOne, circlesTwo) {
+  let isTheSame = true // 先假设两次棋子布局完全一样
+  for (let i = 0; i < circlesOne.length; i++) {
+    for (let j = 0; j < circlesOne[i].length; j++) {
+      if (circlesOne[i][j].color !== circlesTwo[i][j].color) {
+        isTheSame = false
+        break
+      }
+    }
+    if (!isTheSame) {
+      break
+    }
+  }
+  
+  return isTheSame
+}
+
+/**
+ * 返回新的 cashCirclesArr (在oldCashCirclesArr的基础上，走了cashCircles 这一小步之后的一大步的数组)
+ * @param oldCashCirclesArr : 老的一大步的数据（包含很多小步的布局的数组）
+ * @param cashCircles : 最新走的一小步的布局
+ * @returns {*}
+ */
+export function getNewCashCirclesArr (oldCashCirclesArr, cashCircles) {
+  let newCashCirclesArr = _.cloneDeep(oldCashCirclesArr)
+  // 如果是这个棋子的 首步，那么这一步（cashCircles）肯定跟初始状态不同，应该直接push进 小步状态数组（cashCirclesArr）
+  if (newCashCirclesArr.length === 1) {
+    newCashCirclesArr.push(cashCircles)
+  }
+  // 这个棋子至少走出过1步了，那么这时应该判断 这一步 是否跟它在这一大步中走过的位置有重复，如果有重复，就相当于它又回退到了这一步
+  else {
+    let hasDuplicateSmallStep = false
+    for (let i = newCashCirclesArr.length - 2; i >= 0; i--) {
+      if (isBoardLayoutTheSame(newCashCirclesArr[i], cashCircles)) {
+        newCashCirclesArr = newCashCirclesArr.slice(0, i + 1)
+        hasDuplicateSmallStep = true
+        break
+      }
+    }
+    if (!hasDuplicateSmallStep) {
+      newCashCirclesArr.push(cashCircles)
+    }
+  }
+  
+  return newCashCirclesArr
+}
+
+
+/**
+ * 根据当前排名 和 当前棋子布局，返回新的 排名
+ * @param selectedChessColors : 选择的所有颜色
+ * @param circles : 当前棋子布局
+ * @param ranking : 当前排名(ranking中只存已经赢了的颜色名，先赢的放前面)
+ */
+export function updateRanking (selectedChessColors, circles, ranking) {
+  let newRanking = ranking.slice()  // 已经完成的
+  
+  // 当前有 2 个玩家
+  if (selectedChessColors.length === 2) {
+    if (!newRanking.includes(selectedChessColors[0])) { // 如果第 1 个颜色没有完成
+      if (northTenAreTheSameGivenColor(selectedChessColors[0], circles)) {
+        newRanking.push(selectedChessColors[0])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[1])) { // 如果第 2 个颜色没有完成
+      if (southTenAreTheSameGivenColor(selectedChessColors[1], circles)) {
+        newRanking.push(selectedChessColors[1])
+      }
+    }
+  }
+  // 当前有 3 个玩家
+  else if (selectedChessColors.length === 3) {
+    if (!newRanking.includes(selectedChessColors[0])) { // 如果第 1 个颜色没有完成
+      if (northTenAreTheSameGivenColor(selectedChessColors[0], circles)) {
+        newRanking.push(selectedChessColors[0])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[1])) { // 如果第 2 个颜色没有完成
+      if (eastSouthTenAreTheSameGivenColor(selectedChessColors[1], circles)) {
+        newRanking.push(selectedChessColors[1])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[2])) { // 如果第 3 个颜色没有完成
+      if (westSouthTenAreTheSameGivenColor(selectedChessColors[2], circles)) {
+        newRanking.push(selectedChessColors[2])
+      }
+    }
+  }
+  // 当前有 4 个玩家
+  else if (selectedChessColors.length === 4) {
+    if (!newRanking.includes(selectedChessColors[0])) { // 如果第 1 个颜色没有完成
+      if (northTenAreTheSameGivenColor(selectedChessColors[0], circles)) {
+        newRanking.push(selectedChessColors[0])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[1])) { // 如果第 2 个颜色没有完成
+      if (eastNorthTenAreTheSameGivenColor(selectedChessColors[1], circles)) {
+        newRanking.push(selectedChessColors[1])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[2])) { // 如果第 3 个颜色没有完成
+      if (southTenAreTheSameGivenColor(selectedChessColors[2], circles)) {
+        newRanking.push(selectedChessColors[2])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[3])) { // 如果第 4 个颜色没有完成
+      if (westSouthTenAreTheSameGivenColor(selectedChessColors[3], circles)) {
+        newRanking.push(selectedChessColors[3])
+      }
+    }
+  }
+  // 当前有 5 个玩家
+  else if (selectedChessColors.length === 5) {
+    if (!newRanking.includes(selectedChessColors[0])) { // 如果第 1 个颜色没有完成
+      if (northTenAreTheSameGivenColor(selectedChessColors[0], circles)) {
+        newRanking.push(selectedChessColors[0])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[1])) { // 如果第 2 个颜色没有完成
+      if (eastNorthTenAreTheSameGivenColor(selectedChessColors[1], circles)) {
+        newRanking.push(selectedChessColors[1])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[2])) { // 如果第 3 个颜色没有完成
+      if (eastSouthTenAreTheSameGivenColor(selectedChessColors[2], circles)) {
+        newRanking.push(selectedChessColors[2])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[3])) { // 如果第 4 个颜色没有完成
+      if (southTenAreTheSameGivenColor(selectedChessColors[3], circles)) {
+        newRanking.push(selectedChessColors[3])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[4])) { // 如果第 5 个颜色没有完成
+      if (westSouthTenAreTheSameGivenColor(selectedChessColors[4], circles)) {
+        newRanking.push(selectedChessColors[4])
+      }
+    }
+  }
+  // 当前有 6 个玩家
+  else if (selectedChessColors.length === 6) {
+    if (!newRanking.includes(selectedChessColors[0])) { // 如果第 1 个颜色没有完成
+      if (northTenAreTheSameGivenColor(selectedChessColors[0], circles)) {
+        newRanking.push(selectedChessColors[0])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[1])) { // 如果第 2 个颜色没有完成
+      if (eastNorthTenAreTheSameGivenColor(selectedChessColors[1], circles)) {
+        newRanking.push(selectedChessColors[1])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[2])) { // 如果第 3 个颜色没有完成
+      if (eastSouthTenAreTheSameGivenColor(selectedChessColors[2], circles)) {
+        newRanking.push(selectedChessColors[2])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[3])) { // 如果第 4 个颜色没有完成
+      if (southTenAreTheSameGivenColor(selectedChessColors[3], circles)) {
+        newRanking.push(selectedChessColors[3])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[4])) { // 如果第 5 个颜色没有完成
+      if (westSouthTenAreTheSameGivenColor(selectedChessColors[4], circles)) {
+        newRanking.push(selectedChessColors[4])
+      }
+    }
+    if (!newRanking.includes(selectedChessColors[5])) { // 如果第 6 个颜色没有完成
+      if (westNorthTenAreTheSameGivenColor(selectedChessColors[5], circles)) {
+        newRanking.push(selectedChessColors[5])
+      }
+    }
+  }
+  
+  return newRanking
+}
+
+/**
+ * 判断 北边10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @returns {boolean}
+ */
+export function northTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < circles[i].length; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  return allIsThisColor
+}
+
+/**
+ * 判断 当前布局中，南边10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @return : 返回 是或否
+ */
+export function southTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = circles.length - 4; i < circles.length; i++) {
+    for (let j = 0; j < circles[i].length; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  
+  return allIsThisColor
+}
+
+/**
+ * 判断 东南边10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @returns {boolean}
+ */
+export function eastSouthTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = 9; i < 13; i++) {
+    for (let j = 9; j < i + 1; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  return allIsThisColor
+}
+
+/**
+ * 判断 西南方10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @returns {boolean} : 如果都是给定的颜色，返回 true
+ */
+export function westSouthTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = 9; i < 13; i++) {
+    for (let j = 0; j < i - 8; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  return allIsThisColor
+}
+
+/**
+ * 判断 东北边10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @returns {boolean}
+ */
+export function eastNorthTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = 4; i < 8; i++) {
+    for (let j = 9; j < 17 - i; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  return allIsThisColor
+}
+
+/**
+ * 判断 西北10子 是否都是给定的颜色
+ * @param color : 给定的颜色
+ * @param circles : 当前布局
+ * @returns {boolean}
+ */
+export function westNorthTenAreTheSameGivenColor (color, circles) {
+  let allIsThisColor = true // 假设这10个点都是给定的颜色
+  for (let i = 4; i < 8; i++) {
+    for (let j = 0; j < 8 - i; j++) {
+      if (circles[i][j].color !== color) {
+        allIsThisColor = false
+        break
+      }
+    }
+    if (!allIsThisColor) {
+      break
+    }
+  }
+  return allIsThisColor
+}
+
+
+/**
+ * 找到新的 下一步玩家颜色 ，返回
+ * @param selectedChessColors : 已经选择的所有颜色
+ * @param oldRanking : 老的已完成游戏的颜色
+ * @param newRanking : 新的已完成游戏的颜色
+ * @param oldCurrentPlayingColor ： 老的当前玩家颜色
+ */
+export function getNewCurrentPlayingColor (selectedChessColors, oldRanking, newRanking, oldCurrentPlayingColor) {
+  let newCurrentPlayingColor = ''
+  
+  // 如果没有新的颜色完成游戏
+  if (oldRanking.length === newRanking.length) {
+    let notCompleteColors = getNotCompleteColors(selectedChessColors, oldRanking)  // 没有完成游戏的颜色
+    // 找到老的当前玩家颜色所在的索引
+    let oldCurrentPlayingColorIndex = 0;
+    for (let i = 0; i < notCompleteColors.length; i++) {
+      if (notCompleteColors[i] === oldCurrentPlayingColor) {
+        oldCurrentPlayingColorIndex = i
+        break
+      }
+    }
+    let newCurrentPlayingColorIndex = (oldCurrentPlayingColorIndex + 1) % notCompleteColors.length
+    newCurrentPlayingColor = notCompleteColors[newCurrentPlayingColorIndex]
+  }
+  // 如果有新的颜色完成游戏
+  else if (oldRanking.length < newRanking.length) {
+    let newCompleteColor = newRanking[newRanking.length - 1] // 新完成游戏的颜色
+    let oldNotCompleteColors = getNotCompleteColors(selectedChessColors, oldRanking)  // 老的还没有完成游戏的颜色
+    // 找到 新完成游戏的颜色 在老的还没有完成游戏的颜色数组 中 的索引
+    let newCompleteColorIndexInOldNotComplete = 0;
+    for (let i = 0; i < oldNotCompleteColors.length; i++) {
+      if (oldNotCompleteColors[i] === newCompleteColor) {
+        newCompleteColorIndexInOldNotComplete = i
+        break
+      }
+    }
+    if (oldNotCompleteColors.length === 1) { // 最后一个未完成的也完成了
+      newCurrentPlayingColor = ''
+    } else if (oldNotCompleteColors.length > 1) {
+      let newCurrentPlayingColorIndex = (newCompleteColorIndexInOldNotComplete + 1) % oldNotCompleteColors.length
+      newCurrentPlayingColor = oldNotCompleteColors[newCurrentPlayingColorIndex]
+    }
+  }
+  
+  return newCurrentPlayingColor
+}
+
+/**
+ * 找到还没有完成比赛的颜色。返回一个数组 ['red','orange']
+ * @param choosedColors : 当前选择的所有棋子颜色（数组：['red','orange'...]），顺序按颜色面板中的顺序来排
+ * @param ranking : 已经完成比赛的颜色（数组：['red','orange']），先赢的排前面
+ */
+export function getNotCompleteColors (choosedColors, ranking) {
+  let notCompleteColors = []
+  for (let i = 0; i < choosedColors.length; i++) {
+    if (!ranking.includes(choosedColors[i])) {
+      notCompleteColors.push(choosedColors[i])
+    }
+  }
+  
+  return notCompleteColors
 }

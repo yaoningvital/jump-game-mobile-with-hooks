@@ -5,18 +5,23 @@ import {
   circlesDefault,
   findJumpToCells,
   findMoveToCells,
-  isMoveHere,
+  getIsMoveHere,
+  getNewCashCirclesArr,
+  getNewCurrentPlayingColor,
+  GREY,
   setEastNorthTenColor,
   setEastSouthTenColor,
   setNorthTenColor,
+  setOneCircleToOneColor,
   setSouthTenColor,
   setWestNorthTenColor,
   setWestSouthTenColor,
+  updateRanking,
 } from '../utils'
 import _ from 'lodash'
 
 
-function Game (props) {
+function Game () {
   let boardWidth = document.body.clientWidth * 0.9 // 棋盘的宽高
   let a = 6    // 棋子与同轴线上相邻棋子边缘的最短距离
   let r = boardWidth / 29.445 - a * 0.5    // 棋子半径
@@ -25,7 +30,7 @@ function Game (props) {
   let [cashCirclesArr, setCashCirclesArr] = useState([circlesDefault])
   
   // 显示选择类型弹层
-  let [showSelectTypeModal, setShowSelectTypeModal] = useState(false)
+  let [showSelectTypeModal, setShowSelectTypeModal] = useState(true)
   
   // 玩家数量
   let [playerNum, setPlayerNum] = useState(0)
@@ -166,7 +171,7 @@ function Game (props) {
     setCurrentSelectedCircle(null)
   }
   
-  // 处理点击棋子
+  // 处理点击 Circle
   function handleClickCircle (circleData, ableReceive) {
     // 还没选择颜色，不能开始游戏
     if (selectedChessColors.length < 2) return
@@ -183,17 +188,37 @@ function Game (props) {
       if (cashCirclesArr.length > 1) return
       
       // 1、找到 当前选中的棋子 的落子点
-      let ableReceiveCells = findAbleReceiveCells(circleData)
+      let ableReceiveCells = findAbleReceiveCells(cashCirclesArr, circleData)
       
       // 2、更新 落子点（显示落子点样式）
       setAbleReceiveCells(ableReceiveCells)
       // 3、更新被选中棋子(的样式)
       setCurrentSelectedCircle(circleData)
     }
+    // 点击了落子点
+    else if (ableReceive) {
+      let cashCircles = _.cloneDeep(cashCirclesArr[cashCirclesArr.length - 1])
+      // 1、把 当前选中棋子 变为 空格
+      setOneCircleToOneColor(cashCircles, currentSelectedCircle, GREY)
+      // 2、把 落子点 变成 当前选中棋子的颜色
+      setOneCircleToOneColor(cashCircles, circleData, currentSelectedCircle.color)
+      // 3、更新 cashCirclesArr
+      let newCashCirclesArr = getNewCashCirclesArr(cashCirclesArr, cashCircles)
+      setCashCirclesArr(newCashCirclesArr)
+      // 4、更新 currentSelectedCircle
+      let newCurrentSelectedCircle = _.cloneDeep(circleData)
+      newCurrentSelectedCircle.color = currentSelectedCircle.color
+      setCurrentSelectedCircle(newCurrentSelectedCircle)
+      // 5、更新 当前新选择棋子 的 落子点
+      let ableReceiveCells = findAbleReceiveCells(newCashCirclesArr, newCurrentSelectedCircle)
+      setAbleReceiveCells(ableReceiveCells)
+    }
   }
   
-  function findAbleReceiveCells (selectedCircle) {
-    // console.log('cashCirclesArr:', cashCirclesArr)
+  /**
+   * 找落子点
+   */
+  function findAbleReceiveCells (cashCirclesArr, selectedCircle) {
     let ableReceiveCells = [] // 当前选中的棋子所有可以落子的点
     // 落子点 分为两种：可以跳到的落子点（简称：跳落子点） 和 可以通过移动一步而达到的落子点（这样的落子点就在选择点的紧挨着的位置，简称：移落子点）
     // 我们知道，一个棋子的一步是可以跳到多个落子点的。
@@ -203,7 +228,6 @@ function Game (props) {
     // b) 对于棋子的 非首步，如果它的前一小步是 跳过来 的，那么它的落子点只包括 跳落子点；
     // c) 对于棋子的 非首步，如果它的前一小步是 移过来 的，那么它的落子点只包括一个：它原来的位置；
     
-    // cashCirclesArr = _.cloneDeep(cashCirclesArr) // 当前这一大步的数据的深拷贝
     let cashCircles = _.cloneDeep(cashCirclesArr[cashCirclesArr.length - 1]) // 当前棋子布局
     
     // 首步
@@ -216,7 +240,7 @@ function Game (props) {
     // 非首步
     else if (cashCirclesArr.length > 1) {
       // 判断当前棋子是不是移过来的
-      let isMoveHere = isMoveHere(cashCirclesArr, selectedCircle)
+      let isMoveHere = getIsMoveHere(cashCirclesArr, selectedCircle)
       if (isMoveHere) { // 是移过来的，isMoveHere 是 原来移过来的位置对象
         ableReceiveCells.push(isMoveHere)
       } else { // 是跳过来的，isMoveHere 是 false
@@ -226,6 +250,62 @@ function Game (props) {
     }
     
     return ableReceiveCells
+  }
+  
+  // 点击“确定”按钮
+  function handleConfirm () {
+    // 更新 ranking
+    let newCircles = cashCirclesArr[cashCirclesArr.length - 1]
+    let newRanking = updateRanking(selectedChessColors, newCircles, ranking)
+    setRanking(newRanking)
+    
+    // 更新 history
+    let oldCurrentPlayingColor = history[history.length - 1].currentPlayingColor
+    let newCurrentPlayingColor = getNewCurrentPlayingColor(selectedChessColors, ranking, newRanking, oldCurrentPlayingColor)
+    
+    let newHistory = [...history, {
+      circles: cashCirclesArr[cashCirclesArr.length - 1],
+      currentPlayingColor: newCurrentPlayingColor,
+      ranking: newRanking
+    }]
+    setHistory(newHistory)
+    
+    // 更新 ableReceiveCells
+    setAbleReceiveCells([])
+    
+    // 更新 currentSelectedCircle
+    setCurrentSelectedCircle(null)
+    
+    // 更新 cashCirclesArr
+    let newCashCirclesArr = [cashCirclesArr[cashCirclesArr.length - 1]]
+    setCashCirclesArr(newCashCirclesArr)
+  }
+  
+  // 点“返回上一步”
+  function handleGoBack () {
+    // let [history, setHistory] = useState([{
+    //   circles: circlesDefault, // 棋子布局
+    //   currentPlayingColor: null, // 当前玩家的颜色
+    //   ranking: [], // 已经完成游戏的颜色
+    // }])
+    
+    // 更新 history
+    let newHistory = history.slice(0, history.length - 1)
+    setHistory(newHistory)
+    
+    // 更新 cashCirclesArr
+    let newCashCirclesArr = [newHistory[newHistory.length - 1].circles]
+    setCashCirclesArr(newCashCirclesArr)
+    
+    // 更新 ranking
+    let newRanking = newHistory[newHistory.length - 1].ranking
+    setRanking(newRanking)
+    
+    // 更新 ableReceiveCells
+    setAbleReceiveCells([])
+    
+    // 更新 currentSelectedCircle
+    setCurrentSelectedCircle(null)
   }
   
   
@@ -240,7 +320,8 @@ function Game (props) {
       
       {/*下一步*/}
       {
-        selectedChessColors.length > 0 &&
+        selectedChessColors.length > 0 &&  // 已经选择了棋子颜色
+        ranking.length < playerNum &&  // 还有 没下完的玩家
         <div className="next-player">
           <span>下一步：</span>
           <button style={{
@@ -272,10 +353,36 @@ function Game (props) {
         handleConfirmSelectType={handleConfirmSelectType}
       />
       
-      {/*  按钮：返回上一步、重玩*/}
-      <div className="btns">
-        <button onClick={handleReplay}>重玩</button>
-        <button>返回上一步</button>
+      <div className="bottom-area">
+        {/*  按钮：返回上一步、重玩*/}
+        <div className="btns">
+          <button onClick={handleReplay}>重玩</button>
+          <button onClick={handleGoBack}>返回上一步</button>
+          <button className="confirm"
+                  onClick={handleConfirm}
+                  disabled={cashCirclesArr.length === 1}
+          >确定
+          </button>
+        </div>
+        
+        {/* 排名*/}
+        <div className="ranking">
+          {
+            ranking.map((colorItem, index) => {
+              return (
+                <div className="ranking-item" key={colorItem}>
+                  <span>第{+index + 1}名：</span>
+                  <button style={{
+                    width: 2 * r + 'px',
+                    height: 2 * r + 'px',
+                    borderRadius: r + 'px',
+                    backgroundColor: colorItem,
+                  }}/>
+                </div>
+              )
+            })
+          }
+        </div>
       </div>
     </div>
   )
