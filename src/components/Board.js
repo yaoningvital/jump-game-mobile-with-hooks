@@ -2,7 +2,10 @@ import React from 'react'
 import Circle from './Circle'
 
 function Board (props) {
-  let {r, a, circles, boardWidth} = props
+  let {
+    r, a, circles, boardWidth, handleClickCircle, ableReceiveCells,
+    currentSelectedCircle,
+  } = props
   let boardRowHeight = 1.732 * (r + a / 2)  // 棋子所在行的高度
   
   
@@ -24,6 +27,12 @@ function Board (props) {
             >
               {
                 rowArr.map((circleItem, circleIndex) => {
+                  let ableReceivePoint = false // 当前这个点是否是一个 落子点 （默认不是）
+                  for (let cell of ableReceiveCells) {
+                    if (cell.rowIndex === circleItem.rowIndex && cell.columnIndex === circleItem.columnIndex) {
+                      ableReceivePoint = true
+                    }
+                  }
                   return (
                     <Circle
                       key={circleIndex}
@@ -31,6 +40,9 @@ function Board (props) {
                       r={r}
                       a={a}
                       boardRowHeight={boardRowHeight}
+                      handleClickCircle={handleClickCircle}
+                      currentSelectedCircle={currentSelectedCircle}
+                      ableReceive={ableReceivePoint}
                     />
                   )
                 })

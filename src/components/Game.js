@@ -3,6 +3,9 @@ import Board from './Board'
 import SelectType from './SelectType'
 import {
   circlesDefault,
+  findJumpToCells,
+  findMoveToCells,
+  isMoveHere,
   setEastNorthTenColor,
   setEastSouthTenColor,
   setNorthTenColor,
@@ -39,6 +42,12 @@ function Game (props) {
   
   // 已经完成游戏的颜色排名，最先完成的在最前面
   let [ranking, setRanking] = useState([])
+  
+  // 落子点
+  let [ableReceiveCells, setAbleReceiveCells] = useState([])
+  
+  // 当前选中棋子
+  let [currentSelectedCircle, setCurrentSelectedCircle] = useState(null)
   
   // 处理选择玩家数量
   function handleSelectPlayerNum (playerNum) {
@@ -153,7 +162,72 @@ function Game (props) {
       ranking: [], // 已经完成游戏的颜色
     }])
     setRanking([])
+    setAbleReceiveCells([])
+    setCurrentSelectedCircle(null)
   }
+  
+  // 处理点击棋子
+  function handleClickCircle (circleData, ableReceive) {
+    // 还没选择颜色，不能开始游戏
+    if (selectedChessColors.length < 2) return
+    
+    // 点击了 棋子
+    if (circleData.color !== '#ddd') {
+      let currentPlayingColor = history[history.length - 1].currentPlayingColor
+      // 只能点击当前玩家的棋子
+      if (circleData.color !== currentPlayingColor) return
+      
+      // 已经有当前玩家的棋子走出去至少一小步了，其他棋子不能再走；
+      // 而对于已经走出去至少一小步的棋子，点它本身是没有反应的。
+      // 现在只能点落子点（空格）继续移动这颗棋子；或者点“确定”按钮确认这一步棋
+      if (cashCirclesArr.length > 1) return
+      
+      // 1、找到 当前选中的棋子 的落子点
+      let ableReceiveCells = findAbleReceiveCells(circleData)
+      
+      // 2、更新 落子点（显示落子点样式）
+      setAbleReceiveCells(ableReceiveCells)
+      // 3、更新被选中棋子(的样式)
+      setCurrentSelectedCircle(circleData)
+    }
+  }
+  
+  function findAbleReceiveCells (selectedCircle) {
+    // console.log('cashCirclesArr:', cashCirclesArr)
+    let ableReceiveCells = [] // 当前选中的棋子所有可以落子的点
+    // 落子点 分为两种：可以跳到的落子点（简称：跳落子点） 和 可以通过移动一步而达到的落子点（这样的落子点就在选择点的紧挨着的位置，简称：移落子点）
+    // 我们知道，一个棋子的一步是可以跳到多个落子点的。
+    // 我们称一个棋子从开始走 到 走到 最后的落子点 的这个过程叫做这个棋子的“一大步”，
+    // 这一大步中的第一小步叫“首步”，后边的所有次小步叫“非首步”。
+    // a) 对于棋子的 首步，它的 落子点 包括 跳落子点 和 移落子点
+    // b) 对于棋子的 非首步，如果它的前一小步是 跳过来 的，那么它的落子点只包括 跳落子点；
+    // c) 对于棋子的 非首步，如果它的前一小步是 移过来 的，那么它的落子点只包括一个：它原来的位置；
+    
+    // cashCirclesArr = _.cloneDeep(cashCirclesArr) // 当前这一大步的数据的深拷贝
+    let cashCircles = _.cloneDeep(cashCirclesArr[cashCirclesArr.length - 1]) // 当前棋子布局
+    
+    // 首步
+    if (cashCirclesArr.length === 1) {
+      let jumpToCells = findJumpToCells(cashCircles, selectedCircle)  // 拿到跳落子点
+      let moveToCells = findMoveToCells(cashCircles, selectedCircle)  // 拿到移落子点
+      
+      ableReceiveCells = ableReceiveCells.concat(jumpToCells, moveToCells)
+    }
+    // 非首步
+    else if (cashCirclesArr.length > 1) {
+      // 判断当前棋子是不是移过来的
+      let isMoveHere = isMoveHere(cashCirclesArr, selectedCircle)
+      if (isMoveHere) { // 是移过来的，isMoveHere 是 原来移过来的位置对象
+        ableReceiveCells.push(isMoveHere)
+      } else { // 是跳过来的，isMoveHere 是 false
+        let jumpToCells = findJumpToCells(cashCircles, selectedCircle)  // 拿到跳落子点
+        ableReceiveCells = ableReceiveCells.concat(jumpToCells)
+      }
+    }
+    
+    return ableReceiveCells
+  }
+  
   
   return (
     <div className="game">
@@ -183,6 +257,9 @@ function Game (props) {
              a={a}
              boardWidth={boardWidth}
              circles={cashCirclesArr[cashCirclesArr.length - 1]}
+             handleClickCircle={handleClickCircle}
+             ableReceiveCells={ableReceiveCells}
+             currentSelectedCircle={currentSelectedCircle}
       />
       
       {/*  选择类型弹层*/}
