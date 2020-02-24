@@ -283,12 +283,6 @@ function Game () {
   
   // 点“返回上一步”
   function handleGoBack () {
-    // let [history, setHistory] = useState([{
-    //   circles: circlesDefault, // 棋子布局
-    //   currentPlayingColor: null, // 当前玩家的颜色
-    //   ranking: [], // 已经完成游戏的颜色
-    // }])
-    
     // 更新 history
     let newHistory = history.slice(0, history.length - 1)
     setHistory(newHistory)
@@ -357,7 +351,10 @@ function Game () {
         {/*  按钮：返回上一步、重玩*/}
         <div className="btns">
           <button onClick={handleReplay}>重玩</button>
-          <button onClick={handleGoBack}>返回上一步</button>
+          <button onClick={handleGoBack}
+                  disabled={history.length === 1}
+          >返回上一步
+          </button>
           <button className="confirm"
                   onClick={handleConfirm}
                   disabled={cashCirclesArr.length === 1}
